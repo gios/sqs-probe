@@ -15,37 +15,51 @@ const sqsService = require("./sqs-service");
 const Listener = require("./listeners");
 const { parseJSON } = require("./helpers");
 
+program
+  .version(require("./package.json").version)
+  .usage("<file> [options]")
+  .option("--aws-key-id [awsKeyId]", "AWS Key Id")
+  .option("--aws-secret-key [awsSecretKey]", "AWS Secret Key")
+  .option("--aws-role-arn [awsRoleArn]", "AWS Role Arn")
+  .option("--aws-region [awsRegion]", "AWS Region")
+  .option("--queue-request [queueRequest]", "Request SQS queue name")
+  .option("--queue-response [awsResponse]", "Response SQS queue name")
+  .option("-t, --times [times]", "How many messages should be sent")
+  .parse(process.argv);
+
+const [configPath] = program.args;
+const awsKeyId = process.env.SQS_PROBE_AWS_KEY_ID || program.awsKeyId;
+const awsSecretKey =
+  process.env.SQS_PROBE_AWS_SECRET_KEY || program.awsSecretKey;
+const awsRoleArn = process.env.SQS_PROBE_AWS_ROLE_ARN || program.awsRoleArn;
+const awsRegion = process.env.SQS_PROBE_AWS_REGION || program.awsRegion;
+const queueRequest =
+  process.env.SQS_PROBE_QUEUE_REQUEST || program.queueRequest;
+const awsResponse = process.env.SQS_PROBE_QUEUE_RESPONSE || program.awsResponse;
+const times = +process.env.SQS_PROBE_TIMES || +program.times;
+
 try {
   config.update({
-    accessKeyId: process.env.SQS_PROBE_AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.SQS_PROBE_AWS_SECRET_ACCESS_KEY
+    accessKeyId: awsKeyId,
+    secretAccessKey: awsSecretKey
   });
 
   config.credentials = new TemporaryCredentials({
-    RoleArn: process.env.SQS_PROBE_AWS_ROLE_ARN
+    RoleArn: awsRoleArn
   });
 } catch (err) {
   console.log(error("%s (%s) %s"), "AWS", "connection", err);
 }
 
-program
-  .version(require("./package.json").version)
-  .usage("<file> [options]")
-  .option("-t, --times [times]", "how many messages should be send")
-  .parse(process.argv);
-
-const client = sqsService.getClient();
-
+const client = sqsService.getClient(awsRegion);
 const messageMap = new Map();
-const [configPath] = program.args;
-const times = +program.times;
 
 (async () => {
   const requestConfig = parseJSON(await readFile(configPath));
   const messages = [];
   const listener = new Listener(client, messageMap);
   const queueUrl = await sqsService.getQueueUrlPromise(client, {
-    QueueName: requestConfig.responseQueue
+    QueueName: awsResponse
   });
 
   listener
@@ -64,11 +78,7 @@ const times = +program.times;
     messages.push({ ...requestConfig, id });
   }
 
-  await sqsService.sendMessage(
-    client,
-    messages,
-    process.env.SQS_PROBE_QUEUE_REQUESTS
-  );
+  await sqsService.sendMessage(client, messages, queueRequest);
 
   messages.forEach(message =>
     messageMap.set(message.id, { time: process.hrtime(), completed: false })

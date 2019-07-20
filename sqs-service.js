@@ -4,15 +4,10 @@ const uuid = require("uuid/v4");
 
 const error = chalk.bold.red;
 
-const SQS_PROBE_QUEUE_RESPONSES = process.env.SQS_PROBE_QUEUE_RESPONSES;
 const WINSTON_SQS_PREFIX = "SQS LOG:";
 
 class SQSService {
-  async sendMessage(
-    client,
-    message,
-    responseQueue = SQS_PROBE_QUEUE_RESPONSES
-  ) {
+  async sendMessage(client, message, responseQueue) {
     try {
       const queueUrl = await this.getQueueUrlPromise(client, {
         QueueName: responseQueue
@@ -46,10 +41,8 @@ class SQSService {
     });
   }
 
-  getClient() {
-    return new SQS({
-      region: process.env.SQS_PROBE_AWS_EC2_REGION
-    });
+  getClient(region) {
+    return new SQS({ region });
   }
 
   sendMessagePromise(client, queueUrl, message) {
