@@ -1,6 +1,6 @@
 # sqs-probe
 
-Test your service performance using Amazon SQS.
+Test your services performance using Amazon SQS.
 
 > VERSION ON NPM HASN'T PUBLISHED YET.
 >
