@@ -34,7 +34,7 @@ class Listener {
           const id = data.id;
           if (!this.messageMap.get(id)) {
             console.log(warn(`Unidentified message with id: ${id}`));
-            return;
+            continue;
           }
           const time = process.hrtime(this.messageMap.get(id).time);
           this.messageMap.set(id, { time, completed: true });
@@ -57,10 +57,7 @@ class Listener {
               }
             ).time;
             console.log(
-              info(
-                "All messages were processed in " +
-                  chalk.bold.green(hrtimeToString(totalTime))
-              )
+              info("Total time: " + chalk.bold.green(hrtimeToString(totalTime)))
             );
             process.exit();
           }
