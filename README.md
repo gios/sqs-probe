@@ -59,7 +59,7 @@ Locally usage.
 | `--queue-response` | `SQS_PROBE_QUEUE_RESPONSE` | Response SQS queue name          |
 | `-t, --times`      | `SQS_PROBE_TIMES`          | How many messages should be sent |
 
-> ENV Variables has higher priority over CLI arguments.
+> ENV Variables have higher priority over CLI arguments.
 
 ## Contribution
 
